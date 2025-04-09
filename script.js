@@ -13,7 +13,7 @@ let handLandmarker = undefined;
 let webcamRunning = false;
 let results = undefined;
 
-let collectedData = { Schild: [], Magie: [], Zwaard: [] }; // In-memory storage for hand data
+let collectedData = { Schild: [], Magie: [], Zwaard: [] };
 let keysPressed = {};
 
 document.addEventListener("keydown", (event) => {
