@@ -1,23 +1,33 @@
 import { HandLandmarker, FilesetResolver, DrawingUtils } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18";
 
-const enableWebcamButton = document.getElementById("webcamButton")
-const logButton = document.getElementById("logButton")
+const enableWebcamButton = document.getElementById("webcamButton");
+const exportButton = document.getElementById("exportButton");
+const resetButton = document.getElementById("resetButton");
 
-const video = document.getElementById("webcam")
-const canvasElement = document.getElementById("output_canvas")
-const canvasCtx = canvasElement.getContext("2d")
+const video = document.getElementById("webcam");
+const canvasElement = document.getElementById("output_canvas");
+const canvasCtx = canvasElement.getContext("2d");
 
-const drawUtils = new DrawingUtils(canvasCtx)
+const drawUtils = new DrawingUtils(canvasCtx);
 let handLandmarker = undefined;
 let webcamRunning = false;
 let results = undefined;
 
-let image = document.querySelector("#myimage")
+let collectedData = { Schild: [], Magie: [], Zwaard: [] }; // In-memory storage for hand data
+let keysPressed = {};
 
+document.addEventListener("keydown", (event) => {
+    keysPressed[event.key] = true;
+});
 
-/********************************************************************
- // CREATE THE POSE DETECTOR
- ********************************************************************/
+document.addEventListener("keyup", (event) => {
+    keysPressed[event.key] = false;
+});
+
+function isKeyPressed(key) {
+    return keysPressed[key] === true;
+}
+
 const createHandLandmarker = async () => {
     const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm");
     handLandmarker = await HandLandmarker.createFromOptions(vision, {
@@ -26,17 +36,13 @@ const createHandLandmarker = async () => {
             delegate: "GPU"
         },
         runningMode: "VIDEO",
-        numHands: 2
+        numHands: 1
     });
-    console.log("model loaded, you can start webcam")
 
-    enableWebcamButton.addEventListener("click", (e) => enableCam(e))
-    logButton.addEventListener("click", (e) => logAllHands(e))
-}
+    enableWebcamButton.addEventListener("click", enableCam);
+    exportButton.addEventListener("click", exportTrainingData);
+};
 
-/********************************************************************
- // START THE WEBCAM
- ********************************************************************/
 async function enableCam() {
     webcamRunning = true;
     try {
@@ -55,42 +61,51 @@ async function enableCam() {
     }
 }
 
-/********************************************************************
- // START PREDICTIONS
- ********************************************************************/
 async function predictWebcam() {
-    results = await handLandmarker.detectForVideo(video, performance.now())
+    results = await handLandmarker.detectForVideo(video, performance.now());
 
-    let hand = results.landmarks[0]
-    if(hand) {
-        let thumb = hand[4]
-        image.style.transform = `translate(${video.videoWidth - thumb.x * video.videoWidth}px, ${thumb.y * video.videoHeight}px)`
-    }
+    if (results.landmarks.length > 0) {
+        const hand = results.landmarks[0];
+        const handData = hand.map((point) => [point.x, point.y, point.z]).flat();
 
-    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    for(let hand of results.landmarks){
+        if (isKeyPressed("1")) {
+            collectedData.Schild.push(handData);
+        }
+
+        if (isKeyPressed("2")) {
+            collectedData.Magie.push(handData);
+        }
+
+        if (isKeyPressed("3")) {
+            collectedData.Zwaard.push(handData);
+        }
+
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
         drawUtils.drawConnectors(hand, HandLandmarker.HAND_CONNECTIONS, { color: "#00FF00", lineWidth: 5 });
         drawUtils.drawLandmarks(hand, { radius: 4, color: "#FF0000", lineWidth: 2 });
     }
 
     if (webcamRunning) {
-        window.requestAnimationFrame(predictWebcam)
+        window.requestAnimationFrame(predictWebcam);
     }
 }
 
-/********************************************************************
- // LOG HAND COORDINATES IN THE CONSOLE
- ********************************************************************/
-function logAllHands(){
-    for (let hand of results.landmarks) {
-        // console.log(hand)
-        console.log(hand[4])
-    }
-}
-
-/********************************************************************
- // START THE APP
- ********************************************************************/
 if (navigator.mediaDevices?.getUserMedia) {
-    createHandLandmarker()
+    createHandLandmarker();
 }
+
+function exportTrainingData() {
+    const data = JSON.stringify(collectedData, null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "TrainingData.json";
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+resetButton.addEventListener("click", () => {
+    collectedData = { Schild: [], Magie: [], Zwaard: [] };
+    console.log("Training data has been reset:", collectedData);
+});
