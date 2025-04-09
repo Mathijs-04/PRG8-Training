@@ -19,7 +19,6 @@ let keysPressed = {};
 document.addEventListener("keydown", (event) => {
     keysPressed[event.key] = true;
 });
-
 document.addEventListener("keyup", (event) => {
     keysPressed[event.key] = false;
 });
@@ -90,10 +89,6 @@ async function predictWebcam() {
     }
 }
 
-if (navigator.mediaDevices?.getUserMedia) {
-    createHandLandmarker();
-}
-
 function exportTrainingData() {
     const data = JSON.stringify(collectedData);
     const blob = new Blob([data], { type: "application/json" });
@@ -109,3 +104,7 @@ resetButton.addEventListener("click", () => {
     collectedData = { Schild: [], Magie: [], Zwaard: [] };
     console.log("Training data has been reset:", collectedData);
 });
+
+if (navigator.mediaDevices?.getUserMedia) {
+    createHandLandmarker();
+}
