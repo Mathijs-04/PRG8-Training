@@ -95,7 +95,7 @@ if (navigator.mediaDevices?.getUserMedia) {
 }
 
 function exportTrainingData() {
-    const data = JSON.stringify(collectedData, null, 2);
+    const data = JSON.stringify(collectedData);
     const blob = new Blob([data], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
