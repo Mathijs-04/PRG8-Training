@@ -3,7 +3,8 @@ const options = {
     task: 'classification',
     debug: true,
     layers: [
-        {type: 'dense', units: 64, activation: 'relu'},
+        {type: 'dense', units: 128, activation: 'relu'},
+        {type: 'dense', units: 256, activation: 'relu'},
         {type: 'dense', units: 64, activation: 'relu'},
         {type: 'dense', activation: 'softmax'},
     ],
