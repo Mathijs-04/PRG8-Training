@@ -57,6 +57,11 @@ async function trainNN(trainingData) {
 
 async function testModel() {
     let correct = 0;
+    const confusionMatrix = {
+        'Schild': { 'Schild': 0, 'Magie': 0, 'Zwaard': 0 },
+        'Magie': { 'Schild': 0, 'Magie': 0, 'Zwaard': 0 },
+        'Zwaard': { 'Schild': 0, 'Magie': 0, 'Zwaard': 0 }
+    };
 
     if (testData.length === 0) {
         console.error("No test data available");
@@ -65,7 +70,12 @@ async function testModel() {
 
     for (const testItem of testData) {
         const prediction = await nn.classify(testItem.pose);
-        if (prediction[0].label === testItem.label) {
+        const actual = testItem.label;
+        const predicted = prediction[0].label;
+
+        confusionMatrix[actual][predicted]++;
+
+        if (predicted === actual) {
             correct++;
         }
     }
@@ -73,8 +83,31 @@ async function testModel() {
     const accuracy = (correct / testData.length * 100).toFixed(2);
     console.log(`Accuracy: ${accuracy}%`);
 
+    displayConfusionMatrix(confusionMatrix);
+
     const accuracyDisplay = document.getElementById("accuracyDisplay");
     if (accuracyDisplay) {
         accuracyDisplay.textContent = `Accuracy: ${accuracy}%`;
     }
+}
+
+function displayConfusionMatrix(matrix) {
+    const matrixContainer = document.createElement("div");
+    const table = document.createElement("table");
+    const header = document.createElement("tr");
+    header.innerHTML = "<th>Ac / Pr</th><th>Schild</th><th>Magie</th><th>Zwaard</th>";
+    table.appendChild(header);
+
+    const rows = ["Schild", "Magie", "Zwaard"];
+    rows.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${row}</td>`;
+        tr.innerHTML += `<td>${matrix[row]["Schild"]}</td>`;
+        tr.innerHTML += `<td>${matrix[row]["Magie"]}</td>`;
+        tr.innerHTML += `<td>${matrix[row]["Zwaard"]}</td>`;
+        table.appendChild(tr);
+    });
+
+    matrixContainer.appendChild(table);
+    document.body.appendChild(matrixContainer);
 }
