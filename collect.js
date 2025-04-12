@@ -66,6 +66,7 @@ async function predictWebcam() {
     if (results.landmarks.length > 0) {
         const hand = results.landmarks[0];
         const handData = hand.map((point) => [point.x, point.y, point.z]).flat();
+        console.log("Pose Data:", handData);
 
         if (isKeyPressed("1")) {
             collectedData.Schild.push(handData);
